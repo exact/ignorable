@@ -12,6 +12,17 @@ module Ignorable
     end
   end
 
+  module AttributeMissing
+    def attribute_missing(match, *args, &block)
+      raise NoMethodError.new if self.class.ignored_column?(match.attr_name)
+      super
+    end
+    def match_attribute_method?(method_name)
+      match = super
+      return match if (match && !self.class.ignored_column?(match.attr_name))
+    end
+  end
+
   module ClassMethods
     def columns # :nodoc:
       @columns ||= super.reject{|col| ignored_column?(col)}
@@ -54,5 +65,6 @@ end
 unless ActiveRecord::Base.include?(Ignorable::InstanceMethods)
   ActiveRecord::Base.send :include, Ignorable::InstanceMethods
   ActiveRecord::Base.send :extend, Ignorable::ClassMethods
+  ActiveRecord::Base.send :prepend, Ignorable::AttributeMissing
   ActiveRecord::Base.send :class_attribute, :ignored_columns
 end

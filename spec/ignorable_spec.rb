@@ -78,8 +78,28 @@ describe Ignorable do
   end
 
   it "should remove the accessor methods" do
-    expect(TestModel.new).to_not respond_to(:updated_at)
-    expect(TestModel.new).to_not respond_to(:updated_at=)
+    expect(Thing.new).to_not respond_to(:updated_at)
+    expect(Thing.new).to_not respond_to(:updated_at=)
+  end
+
+  it "should remove the accessor methods from existing records" do
+    Thing.connection.execute("INSERT INTO things VALUES(100,100,100,'2008-01-01 10:10:10','2008-01-01 10:10:10')")
+    thing = Thing.find(100)
+    thing.respond_to?(:updated_at)
+    expect(thing).to_not respond_to(:updated_at)
+    expect(thing).to_not respond_to(:updated_at=)
+  end
+
+  it "should raise when tring to access the methods" do
+    expect { Thing.new.updated_at }.to raise_error(NoMethodError)
+    expect { Thing.new.updated_at=Time.now }.to raise_error(NoMethodError)
+  end
+
+  it "should raise when tring to access the methods of existing records" do
+    Thing.connection.execute("INSERT INTO things VALUES(100,100,100,'2008-01-01 10:10:10','2008-01-01 10:10:10')")
+    thing = Thing.find(100)
+    expect { thing.updated_at }.to raise_error(NoMethodError)
+    expect { thing.updated_at=Time.now }.to raise_error(NoMethodError)
   end
 
   it "should not override existing methods with ignored column accessors" do
